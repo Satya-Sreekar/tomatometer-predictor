@@ -1,6 +1,6 @@
 Model,Best params,CV macro F1
-Logistic Regression,{'logisticregression__C': 100},0.6616
-Decision Tree,"{'decisiontreeclassifier__max_depth': 10, 'decisiontreeclassifier__min_samples_leaf': 50}",0.6646
-KNN,{'kneighborsclassifier__n_neighbors': 15},0.6044
-Naive Bayes,{},0.4974
-Support Vector Machine,{'calibratedclassifiercv__estimator__C': 3},0.6679
+Logistic Regression,{'logisticregression__C': 10},0.6864
+Decision Tree,"{'decisiontreeclassifier__max_depth': 10, 'decisiontreeclassifier__min_samples_leaf': 50}",0.6758
+KNN,{'kneighborsclassifier__n_neighbors': 25},0.6009
+Naive Bayes,{},0.5559
+Support Vector Machine,{'calibratedclassifiercv__estimator__C': 1},0.6894

@@ -11,13 +11,14 @@ import joblib
 import numpy as np
 import pandas as pd
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.compose import ColumnTransformer
 from sklearn.impute import SimpleImputer
 from sklearn.linear_model import LogisticRegression
 from sklearn.model_selection import GridSearchCV, train_test_split
 from sklearn.naive_bayes import GaussianNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import StandardScaler
+from sklearn.preprocessing import StandardScaler, TargetEncoder
 from sklearn.svm import SVC
 from sklearn.tree import DecisionTreeClassifier
 
@@ -25,10 +26,11 @@ from metrics import evaluate
 
 SEED = 7
 TARGET = "tomatometer_status"
+PEOPLE = ["director", "studio", "writer", "lead_actor"]
 
 
 def build_features(raw):
-    """Turn the raw columns into a flat numeric table.
+    """Turn the raw columns into one flat table: numeric features plus PEOPLE names.
 
     Left out on purpose: tomatometer_rating and the fresh/rotten critic counts
     define the label (they push accuracy to ~98%), tomatometer_count and the top
@@ -47,7 +49,15 @@ def build_features(raw):
     })
     rated = pd.get_dummies(raw["content_rating"], prefix="rated", dtype=int)
     genres = raw["genres"].fillna("").str.get_dummies(", ").add_prefix("genre_")
-    return pd.concat([numeric, rated, genres.drop(columns="genre_", errors="ignore")], axis=1)
+    first_name = lambda col: raw[col].fillna("Unknown").str.split(", ").str[0]
+    people = pd.DataFrame({
+        "director": first_name("directors"),
+        "studio": raw["production_company"].fillna("Unknown"),
+        "writer": first_name("authors"),
+        "lead_actor": first_name("actors"),
+    })
+    genres = genres.drop(columns="genre_", errors="ignore")
+    return pd.concat([numeric, rated, genres, people], axis=1)
 
 
 raw = pd.read_csv("data/rotten_tomatoes_movies.csv").dropna(subset=[TARGET])
@@ -58,8 +68,16 @@ X_train, X_test, y_train, y_test = train_test_split(
 
 
 def pipe(*steps):
-    # Imputing inside the pipeline means medians come from the training data only.
-    return make_pipeline(SimpleImputer(strategy="median"), *steps)
+    # Preprocessing lives inside the pipeline, so medians and track records come from
+    # the training data only. TargetEncoder turns each name into that person's past
+    # verdict rates, cross-fitting on the training rows so a film can't see its own
+    # label. Names not seen in training fall back to the overall rates.
+    numeric = [c for c in X.columns if c not in PEOPLE]
+    preprocess = ColumnTransformer([
+        ("numeric", SimpleImputer(strategy="median"), numeric),
+        ("people", TargetEncoder(target_type="multiclass", random_state=SEED), PEOPLE),
+    ])
+    return make_pipeline(preprocess, *steps)
 
 
 # (estimator, grid). Grids are searched with CV on the training split only.
@@ -75,7 +93,7 @@ models = {
     ),
     "KNN": (
         pipe(StandardScaler(), KNeighborsClassifier()),
-        {"kneighborsclassifier__n_neighbors": [5, 9, 15, 25]},
+        {"kneighborsclassifier__n_neighbors": [9, 15, 25, 41, 61]},
     ),
     "Naive Bayes": (pipe(GaussianNB()), {}),
     # sklearn 1.9 deprecates SVC(probability=True); calibration gives predict_proba for AUC.
