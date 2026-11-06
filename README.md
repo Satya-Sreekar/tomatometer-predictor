@@ -1,6 +1,6 @@
 # Tomatometer Predictor: ML Assignment 2
 
-Live app: **<STREAMLIT_APP_URL>**
+Live app: **https://satya-sreekar-tomatometer-predictor-app-z4lc06.streamlit.app/**
 
 ## a. Problem statement
 
