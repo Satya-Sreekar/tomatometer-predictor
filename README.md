@@ -66,7 +66,7 @@ Run locally:
 
 ```bash
 pip install -r requirements.txt
-python train_models.py      # optional: regenerates model/ and test_data.csv (about 2 to 6 minutes, depending on the machine)
+python train_models.py      # optional: regenerates model/ and test_data.csv (2 to 6 minutes)
 streamlit run app.py
 ```
 
