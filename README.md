@@ -66,7 +66,7 @@ Run locally:
 
 ```bash
 pip install -r requirements.txt
-python train_models.py      # optional: regenerates model/ and test_data.csv (about 2 minutes)
+python train_models.py      # optional: regenerates model/ and test_data.csv (about 2 to 6 minutes, depending on the machine)
 streamlit run app.py
 ```
 
@@ -98,7 +98,7 @@ Preprocessing is the same for all five: median imputation for the numeric column
 
 | ML Model Name | Observation about model performance |
 |---|---|
-| Logistic Regression | **Best on 5 of 6 metrics** (Acc 0.717, AUC 0.870, F1 0.698, MCC 0.549), including the best ranking of the classes. It gained the most from the people features, going from 0.695 to 0.717 accuracy, because a track record is a simple numeric rate that suits a linear model. Its coefficients make sense: a higher audience rating pushes towards Certified-Fresh, and a director with a Rotten history pushes towards Rotten. Cross-validation and test scores agree (macro F1 0.686 vs 0.698), so there's no sign of overfitting. |
+| Logistic Regression | **Best on 5 of 6 metrics** (Acc 0.717, AUC 0.870, F1 0.698, MCC 0.549), including the best ranking of the classes. It gained more from the people features than the other two strong models, going from 0.695 to 0.717 accuracy, because a track record is a simple numeric rate that suits a linear model. Its coefficients make sense: a higher audience rating pushes towards Certified-Fresh, and a director with a Rotten history pushes towards Rotten. Cross-validation and test scores agree (macro F1 0.686 vs 0.698), so there's no sign of overfitting. |
 | Decision Tree | Third, but respectable (Acc 0.701, MCC 0.526), and the **best at finding Certified-Fresh movies** (recall 0.63). Feature importance is led by `audience_rating` (48%) and `log_audience_count` (18%), with the studio's track record at 10%. It gained little from the people features (0.698 to 0.701), since a depth-limited tree can only use so many splits. Its accuracy is significantly below Logistic Regression (McNemar χ² = 4.92). It is the easiest model to explain. |
 | KNN | Weak (Acc 0.652, MCC 0.437), and the only model that got worse with the people features (0.658 to 0.652). 27 of the 33 non-people features are binary flags, and encoding adds 12 more columns, so distances are probably noisy. It rarely predicts Certified-Fresh (11% of movies vs 18% actual), which gives it the lowest recall for that class (0.37). |
 | Naive Bayes | Still the lowest (Acc 0.613, MCC 0.390), though above the 42.8% baseline, and it improved by 3.4 points with the people features. GaussianNB assumes each feature is normally distributed and independent, but most features are 0/1 flags, and the three rates encoded for each person are directly related. It predicts Rotten for 57% of movies, giving high Rotten recall (0.82) but low Fresh recall (0.46). |
@@ -107,7 +107,7 @@ Preprocessing is the same for all five: median imputation for the numeric column
 
 **Main finding.** Film details, track records and audience reaction reach about 72% accuracy, well above the 42.8% baseline, using no critic data. Rotten is the easiest class to predict. For Logistic Regression, 84% of errors (845 of 1,002) are between neighbouring classes (Fresh vs Rotten, Fresh vs Certified-Fresh), and the two extremes are confused least often. The app's "Biggest misses" tab shows real examples: *Hulk* has an audience score of only 29 but is Fresh with critics, and the model called it Rotten with 97% confidence.
 
-**What didn't help.** Scored by cross-validation on the training data, adding the plot synopsis (TF-IDF with SVD) didn't raise accuracy. Neither did more cast members or counts of credited people.
+**What didn't help.** Scored by cross-validation on the training data, adding the plot synopsis (TF-IDF with SVD) didn't raise accuracy. More cast members and counts of credited people made no meaningful difference.
 
 **Limitations.** Many test films have people the model has never seen (34% of directors, 35% of lead actors, 45% of writers and 13% of studios), so they get no real track record. Track records also use all training films, including ones released after a given test film, so this measures how well verdicts can be explained rather than how well they could be forecast. Finally, Certified-Fresh partly depends on how many critics reviewed a film, which is deliberately hidden here. That likely caps further gains.
 
